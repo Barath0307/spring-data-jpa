@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Product Management</title>
+    <style>
+        .form-group { margin-bottom: 15px; }
+        label { display: inline-block; width: 120px; }
+    </style>
+</head>
+<body>
+    <h2>Product Registration Form</h2>
+    <form id="productForm">
+        <div class="form-group">
+            <label>Product ID:</label>
+            <input type="text" id="productId" required>
+        </div>
+        <div class="form-group">
+            <label>Product Name:</label>
+            <input type="text" id="productName" required>
+        </div>
+        <div class="form-group">
+            <label>Product Price:</label>
+            <input type="number" id="productPrice" required>
+        </div>
+        <div class="form-group">
+            <label>Category:</label>
+            <input type="text" id="category" required>
+        </div>
+        <button type="submit">Submit</button>
+    </form>
+    
+    <h3>All Products</h3>
+	<div id="productList"></div>
+	
+	<h3>Search Product by ID</h3>
+	<div class="form-group">
+	    <label>Product ID:</label>
+	    <input type="text" id="searchProductId" required>
+	    <button onclick="fetchProductById()">Search</button>
+	</div>
+	
+	<div id="singleProductResult"></div>
+
+    <script>
+        document.getElementById('productForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const product = {
+                productId: document.getElementById('productId').value,
+                name: document.getElementById('productName').value,
+                price: document.getElementById('productPrice').value,
+                category: document.getElementById('category').value
+            };
+
+            fetch('http://localhost:8080/api/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(product)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Product saved successfully!');
+                fetchAllProducts();
+                this.reset();
+            })
+            .catch(error => alert('Error saving product'));
+        });
+        
+        // Fetch and display all products
+	    function fetchAllProducts() {
+		    fetch('http://localhost:8080/api/displayAll')
+		        .then(response => response.json())
+		        .then(data => {
+		            let productList = document.getElementById('productList');
+		            
+		            // Build the table headers
+		            let tableHTML = `
+		                <table border="1" cellspacing="0" cellpadding="5">
+		                    <thead>
+		                        <tr>
+		                            <th>Product ID</th>
+		                            <th>Product Name</th>
+		                            <th>Product Price</th>
+		                            <th>Category</th>
+		                        </tr>
+		                    </thead>
+		                    <tbody>
+		            `;
+		
+		            // Loop through each product and create a table row
+		            tableHTML += data.map(emp => 
+		                `<tr>
+		                    <td>${emp.productId}</td>
+		                    <td>${emp.name}</td>
+		                    <td>${emp.price}</td>
+		                    <td>${emp.category}</td>
+		                </tr>`
+		            ).join('');
+		
+		            // Close the table
+		            tableHTML += `
+		                    </tbody>
+		                </table>
+		            `;
+		
+		            // Insert the table into the DOM
+		            productList.innerHTML = tableHTML;
+		        })
+		        .catch(error => alert('Error fetching products'));
+		}
+	    
+	
+	    // Fetch a specific product by ID
+	    function fetchProductById() {
+	        const productId = document.getElementById('searchProductId').value;
+	
+	        fetch(`http://localhost:8080/api/display/${productId}`)
+	            .then(response => response.json())
+	            .then(data => {
+	                let resultDiv = document.getElementById('singleProductResult');
+	                if (data && data.productId) {
+	                    resultDiv.innerHTML = `<p>Product ID: ${data.productId}</p>
+	                                           <p>Name: ${data.name}</p>
+	                                           <p>Price: ${data.price}</p>
+	                                           <p>Category: ${data.category}</p>`;
+	                } else {
+	                    resultDiv.innerHTML = `<p>Product not found</p>`;
+	                }
+	            })
+	            .catch(error => alert('Error fetching product'));
+	    }
+	
+	    // Call fetchAllProducts when the page loads
+	    window.onload = fetchAllProducts;
+    </script>
+</body>
+</html>
